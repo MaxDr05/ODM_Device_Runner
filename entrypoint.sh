@@ -25,5 +25,7 @@ echo "Monkey starting on device: $SERIAL..."
 adb -s $SERIAL shell monkey -p com.android.calculator2 -v 500 > "$LOG_FILE" 2>&1
 
 adb -s $SERIAL logcat -d >> "$LOG_FILE"
+# 恶意注入错误日志，查看是否拦截
+echo "FATAL EXCEPTION: Simulated crash for verification" >> "$LOG_FILE"
 
 echo "Test finished. Log saved to $LOG_FILE"
