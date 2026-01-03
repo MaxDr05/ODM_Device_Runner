@@ -2,7 +2,7 @@
 
 **无状态的 Android 测试执行容器 (Stateless Execution Container)**
 
-> 此组件是 [ODM Distributed Test System](https://github.com/your-infra-repo) 的执行单元。
+> 此组件是 [ODM Distributed Test System](https://github.com/MaxDr05/ODM_Infrastructure.git) 的执行单元。
 
 ## 1. 核心职责 (Core Responsibilities)
 * **ADB 环境隔离**: 每个容器内置独立的 ADB Server，彻底解决物理机上多设备 ADB 冲突的问题。
