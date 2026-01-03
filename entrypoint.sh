@@ -22,12 +22,25 @@ if [[ $SERIAL = MOCK* ]]; then
   exit 0
 fi
 
-adb devices
+# 容错点 C: 精确的设备状态检查
+# 仅仅 adb devices 是不够的，必须 grep 到 serial 且状态为 device
+echo "Checking device status for $SERIAL..."
+adb devices | grep "$SERIAL" | grep "\bdevice\b" > /dev/null
 if [ $? -ne 0 ]; then
-  echo "ERROR: adb fail!"
+  echo "FATAL: Device $SERIAL is missing, offline, or unauthorized!"
+  # 直接退出，不要浪费时间跑 Monkey
   exit 1
 fi
 
+# 容错点 D: 目标应用预检 (Pre-flight Check)
+# 防止因为包名错误或未安装导致的无效测试
+TARGET_PKG="com.android.calculator2"
+echo "Checking if package $TARGET_PKG is installed..."
+adb -s $SERIAL shell pm list packages | grep "$TARGET_PKG" > /dev/null
+if [ $? -ne 0 ]; then
+  echo "FATAL: Package $TARGET_PKG is NOT installed on $SERIAL!"
+  exit 1
+fi
 LOG_FILE="/app/log/device_${SERIAL}.log"
 LOG_PATH="/app/log"
 mkdir -p "$LOG_PATH"
