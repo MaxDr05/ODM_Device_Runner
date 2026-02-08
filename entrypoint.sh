@@ -6,9 +6,6 @@ if [ -z "$SERIAL" ]; then
   exit 1
 fi
 
-echo "Starting ADB server..."
-adb start-server
-
 if [[ $SERIAL = MOCK* ]]; then
   LOG_FILE="/app/log/device_${SERIAL}.log"
   LOG_PATH="/app/log"
