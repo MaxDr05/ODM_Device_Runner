@@ -4,10 +4,20 @@
 
 > 此组件是 [ODM Distributed Test System](https://github.com/MaxDr05/ODM_Infrastructure.git) 的执行单元。
 
-## 1. 核心职责 (Core Responsibilities)
-* **ADB 环境隔离**: 每个容器内置独立的 ADB Server，彻底解决物理机上多设备 ADB 冲突的问题。
-* **设备守护 (Device Guard)**: 负责设备连接状态的生命周期管理。
-* **测试注入**: 动态执行 Monkey 或 UI Automator 测试用例。
+## 1. 核心设计决策 (Architecture Decisions)
+
+### 1.1 为什么选择“宿主机 ADB 代理模式”？
+在容器化方案选型中，我们评估了两种路径：
+* **方案 A（USB 直通）**：将 `/dev/bus/usb` 挂载至容器，每个容器运行独立的 ADB Server。
+* **方案 B（远程代理）**：容器复用宿主机的 ADB Server，仅通过 Socket 通信。
+
+经过实际压测，我们发现**方案 A** 在高并发场景下存在严重的 USB 抢占（Race Condition）问题，且对宿主机 Linux 内核版本有强依赖。
+因此，本项目最终采用**方案 B**。
+
+**我们定义的“隔离”是指：**
+* ✅ **依赖隔离**：Python 环境、测试工具链（Monkey/Appium）、测试数据完全隔离。
+* ✅ **进程隔离**：Monkey/Instrumentation 进程在容器内运行，互不干扰。
+* ⚠️ **IO 共享**：底层 USB 通信交由宿主机统一调度，换取最高的连接稳定性。
 
 ## 2. 关键实现 (Implementation Details)
 
@@ -22,10 +32,12 @@
 
 ## 3. 快速使用
 
+### 3.1 启动容器 (Socket Proxy Mode)
+由于采用 ADB 代理模式，无需挂载 USB 设备，但需要注入 ADB Server 的 Socket 地址：
+
 ```bash
 # 单机调试模式
 docker run --rm \
   -e SERIAL=你的设备序列号 \
-  -v /dev/bus/usb:/dev/bus/usb \
-  --privileged \
+  -e ADB_SERVER_SOCKET=tcp:host.docker.internal:5037 \
   odm_device_runner
